@@ -177,9 +177,26 @@
             border-color: #38bdf8;
         }
 
+        /* 標題與圖案佈局 */
+        .title-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .header-logo {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 1.5px solid #38bdf8;
+            box-shadow: 0 0 8px rgba(56, 189, 248, 0.6);
+        }
+
         h1 {
-            margin: 0 0 4px 0;
-            font-size: 1.25rem;
+            margin: 0;
+            font-size: 1.2rem;
             color: #ffffff;
             text-shadow: 0 2px 10px rgba(56, 189, 248, 0.6);
         }
@@ -364,7 +381,12 @@
                     <button class="lang-btn" onclick="setLanguage('en')">English</button>
                 </div>
 
-                <h1 id="start-title">🎹 Utopia 7Cs 鋼琴大師 🎹</h1>
+                <!-- 標題區域：兩側換成你嘅 Logo 圖片 -->
+                <div class="title-wrapper">
+                    <img src="SU image.jpg" alt="Logo" class="header-logo">
+                    <h1 id="start-title">Utopia 7Cs 鋼琴大師</h1>
+                    <img src="SU image.jpg" alt="Logo" class="header-logo">
+                </div>
 
                 <!-- 歷史最高分顯示區域 -->
                 <div class="all-high-scores">
@@ -431,7 +453,7 @@
                 labelCombo: '連擊',
                 labelStatus: '血量 / 護盾',
                 controlsHint: '⌨️ 點擊軌道或在音符落到發光判定區時按下 D, F, J, K 鍵',
-                startTitle: '🎹 Utopia 7Cs 鋼琴大師 🎹',
+                startTitle: 'Utopia 7Cs 鋼琴大師',
                 startDesc: '跟隨音符節奏點擊琴鍵，收集 7Cs 精神特殊音符：',
                 cardEasy: '🟢 簡單模式',
                 cardNormal: '🔵 標準速度',
@@ -477,7 +499,7 @@
                 labelCombo: '连击',
                 labelStatus: '血量 / 护盾',
                 controlsHint: '⌨️ 点击轨道或在音符落到发光判定区时按下 D, F, J, K 键',
-                startTitle: '🎹 Utopia 7Cs 钢琴大师 🎹',
+                startTitle: 'Utopia 7Cs 钢琴大师',
                 startDesc: '跟随音符节奏点击琴键，收集 7Cs 精神特殊音符：',
                 cardEasy: '🟢 简单模式',
                 cardNormal: '🔵 标准速度',
@@ -523,7 +545,7 @@
                 labelCombo: 'COMBO',
                 labelStatus: 'HP / SHIELD',
                 controlsHint: '⌨️ Tap lanes or press D, F, J, K when tiles reach the glow zone',
-                startTitle: '🎹 Utopia 7Cs Piano Master 🎹',
+                startTitle: 'Utopia 7Cs Piano Master',
                 startDesc: 'Tap rhythm tiles on beat and collect 7Cs power-up notes:',
                 cardEasy: '🟢 Easy Mode',
                 cardNormal: '🔵 Standard',
@@ -1066,7 +1088,7 @@
                 ctx.fillText(keyBinds[i] ? keyBinds[i].toUpperCase() : '', lx + laneWidth / 2, logicalHeight - 25);
             }
 
-            // 【明顯發光判定區 (Hit Zone Box)】
+            // 發光判定區 (Hit Zone Box)
             ctx.save();
             ctx.fillStyle = playerBuffs.widerHitZone ? 'rgba(250, 204, 21, 0.12)' : 'rgba(56, 189, 248, 0.12)';
             ctx.fillRect(0, hitZoneTop, logicalWidth, hitZoneHeight);
@@ -1116,7 +1138,6 @@
                     ctx.textAlign = 'center';
                     ctx.fillText(t.concept.icon, tx + tw / 2, t.y + t.height / 2 + 7);
                 } else {
-                    // 標準音符：加上高對比邊框與漸層，避免重疊時混淆
                     ctx.fillStyle = '#1e40af';
                     ctx.shadowColor = '#38bdf8';
                     ctx.shadowBlur = 8;
@@ -1125,7 +1146,6 @@
                     ctx.lineWidth = 2.5;
                     ctx.stroke();
 
-                    // 內部琴鍵裝飾條
                     ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
                     ctx.fillRect(tx + 4, t.y + 6, tw - 8, 6);
                 }
@@ -1173,7 +1193,7 @@
                 if (p.alpha <= 0) particles.splice(i, 1);
             }
 
-            // 浮動文字 (PERFECT / GOOD / MISS)
+            // 浮動文字
             for (let i = floaters.length - 1; i >= 0; i--) {
                 let f = floaters[i];
                 f.y -= 1.2;
