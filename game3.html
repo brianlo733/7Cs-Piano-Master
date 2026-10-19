@@ -1,0 +1,1244 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Utopia 7Cs - Rhythm Piano Tiles</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100vh;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #091a29;
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            max-width: 480px;
+            max-height: 850px;
+            background: linear-gradient(180deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
+            overflow: hidden;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.6);
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        .wave-bg {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 200%;
+            height: 100px;
+            background-image: url('data:image/svg+xml;utf8,<svg viewBox="0 0 1200 140" xmlns="http://www.w3.org/2000/svg"><path d="M0,40 Q180,90 360,30 T720,30 T1080,30 T1200,40 L1200,140 L0,140 Z" fill="%2338bdf8" opacity="0.2"/></svg>');
+            background-size: 600px 100px;
+            animation: waveMove 8s linear infinite;
+            pointer-events: none;
+            z-index: 1;
+        }
+        @keyframes waveMove {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+
+        .hud {
+            position: absolute;
+            top: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 92%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(15, 32, 39, 0.85);
+            backdrop-filter: blur(10px);
+            padding: 8px 14px;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            z-index: 10;
+        }
+        .hud-item {
+            text-align: center;
+        }
+        .hud-label {
+            font-size: 0.65rem;
+            color: #94a3b8;
+            letter-spacing: 0.5px;
+        }
+        .hud-value {
+            font-size: 1.15rem;
+            font-weight: bold;
+            color: #38bdf8;
+        }
+
+        .status-slots {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 1rem;
+        }
+        .slot-heart, .slot-shield {
+            transition: opacity 0.3s ease;
+        }
+        .slot-off {
+            opacity: 0.25;
+            filter: grayscale(100%);
+        }
+
+        #active-concept {
+            position: absolute;
+            top: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 198, 255, 0.25);
+            border: 1px solid rgba(0, 198, 255, 0.6);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.72rem;
+            color: #e0f2fe;
+            z-index: 10;
+            display: none;
+            backdrop-filter: blur(5px);
+            text-align: center;
+            max-width: 90%;
+            box-shadow: 0 4px 12px rgba(0, 198, 255, 0.3);
+        }
+
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: rgba(11, 24, 33, 0.92);
+            backdrop-filter: blur(10px);
+            z-index: 20;
+            padding: 16px;
+            text-align: center;
+            transition: opacity 0.3s ease;
+        }
+        .screen.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .panel {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            padding: 16px 14px;
+            border-radius: 24px;
+            width: 94%;
+            max-height: 96vh;
+            overflow-y: auto;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.6);
+        }
+
+        .lang-selector {
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: center;
+            gap: 6px;
+        }
+        .lang-btn {
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: #cbd5e1;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.68rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .lang-btn.active {
+            background: #38bdf8;
+            color: #0f172a;
+            font-weight: bold;
+            border-color: #38bdf8;
+        }
+
+        h1 {
+            margin: 0 0 4px 0;
+            font-size: 1.25rem;
+            color: #ffffff;
+            text-shadow: 0 2px 10px rgba(56, 189, 248, 0.6);
+        }
+        p {
+            color: #e2e8f0;
+            font-size: 0.72rem;
+            line-height: 1.35;
+            margin-bottom: 8px;
+        }
+
+        .all-high-scores {
+            display: flex;
+            justify-content: space-between;
+            gap: 6px;
+            margin-bottom: 10px;
+        }
+        .score-card {
+            flex: 1;
+            background: rgba(0, 0, 0, 0.35);
+            border: 1px solid rgba(250, 204, 21, 0.3);
+            border-radius: 12px;
+            padding: 6px 4px;
+            text-align: center;
+        }
+        .score-card-title {
+            font-size: 0.62rem;
+            color: #94a3b8;
+            margin-bottom: 2px;
+        }
+        .score-card-val {
+            font-size: 0.85rem;
+            font-weight: bold;
+            color: #facc15;
+        }
+
+        .concept-list {
+            text-align: left;
+            font-size: 0.66rem;
+            background: rgba(0,0,0,0.3);
+            padding: 6px 10px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            color: #cbd5e1;
+            line-height: 1.4;
+        }
+        .concept-list b {
+            color: #38bdf8;
+        }
+
+        .difficulty-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-top: 6px;
+        }
+        .btn-diff {
+            background: linear-gradient(135deg, #00c6ff, #0072ff);
+            color: white;
+            border: none;
+            padding: 9px;
+            font-size: 0.82rem;
+            font-weight: bold;
+            border-radius: 18px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0, 114, 255, 0.4);
+            transition: transform 0.1s;
+        }
+        .btn-diff.easy {
+            background: linear-gradient(135deg, #34d399, #059669);
+            box-shadow: 0 4px 12px rgba(5, 150, 105, 0.4);
+        }
+        .btn-diff.hard {
+            background: linear-gradient(135deg, #f43f5e, #be123c);
+            box-shadow: 0 4px 12px rgba(190, 18, 60, 0.4);
+        }
+        .btn-diff:active {
+            transform: scale(0.96);
+        }
+
+        .stats-box {
+            text-align: left;
+            font-size: 0.72rem;
+            background: rgba(0, 0, 0, 0.35);
+            padding: 8px 10px;
+            border-radius: 12px;
+            margin: 6px 0 10px 0;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            max-height: 100px;
+            overflow-y: auto;
+        }
+        .stats-title {
+            font-size: 0.75rem;
+            color: #38bdf8;
+            font-weight: bold;
+            margin-bottom: 4px;
+            text-align: center;
+        }
+        .stats-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 2px;
+            color: #e2e8f0;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #00c6ff, #0072ff);
+            color: white;
+            border: none;
+            padding: 8px 14px;
+            font-size: 0.82rem;
+            font-weight: bold;
+            border-radius: 25px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0, 114, 255, 0.5);
+            flex: 1;
+        }
+        .btn-secondary {
+            background: linear-gradient(135deg, #475569, #1e293b);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+        .btn:active {
+            transform: scale(0.95);
+        }
+
+        .controls-hint {
+            position: absolute;
+            bottom: 8px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.68rem;
+            color: rgba(255,255,255,0.7);
+            z-index: 10;
+            pointer-events: none;
+            width: 90%;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <div class="wave-bg"></div>
+
+        <div class="hud">
+            <div class="hud-item">
+                <div class="hud-label" id="label-score">SCORE</div>
+                <div id="score" class="hud-value">0</div>
+            </div>
+            <div class="hud-item">
+                <div class="hud-label" id="label-combo">COMBO</div>
+                <div id="combo" class="hud-value">0</div>
+            </div>
+            <div class="hud-item">
+                <div class="hud-label" id="label-status">HP / SHIELD</div>
+                <div id="status-slots" class="status-slots">
+                    <span id="heart-1" class="slot-heart">❤️</span>
+                    <span id="heart-2" class="slot-heart">❤️</span>
+                    <span id="heart-3" class="slot-heart">❤️</span>
+                    <span id="shield-slot" class="slot-shield slot-off">🛡️</span>
+                </div>
+            </div>
+        </div>
+
+        <div id="active-concept">7Cs Spirit Activated: None</div>
+
+        <canvas id="gameCanvas"></canvas>
+
+        <div class="controls-hint" id="controls-hint">⌨️ 點擊軌道或在音符落到發光判定區時按下 D, F, J, K 鍵</div>
+
+        <!-- 開始畫面 -->
+        <div id="start-screen" class="screen">
+            <div class="panel">
+                <div class="lang-selector">
+                    <button class="lang-btn active" onclick="setLanguage('zh-HK')">繁體中文</button>
+                    <button class="lang-btn" onclick="setLanguage('zh-CN')">简体中文</button>
+                    <button class="lang-btn" onclick="setLanguage('en')">English</button>
+                </div>
+
+                <h1 id="start-title">🎹 Utopia 7Cs 鋼琴大師 🎹</h1>
+
+                <!-- 歷史最高分顯示區域 -->
+                <div class="all-high-scores">
+                    <div class="score-card">
+                        <div class="score-card-title" id="card-easy-title">🟢 簡單模式</div>
+                        <div class="score-card-val" id="score-easy-val">0</div>
+                    </div>
+                    <div class="score-card">
+                        <div class="score-card-title" id="card-normal-title">🔵 標準速度</div>
+                        <div class="score-card-val" id="score-normal-val">0</div>
+                    </div>
+                    <div class="score-card">
+                        <div class="score-card-title" id="card-hard-title">🔴 快速下落</div>
+                        <div class="score-card-val" id="score-hard-val">0</div>
+                    </div>
+                </div>
+
+                <p id="start-desc">跟隨音符節奏點擊琴鍵，收集 7Cs 精神特殊音符：</p>
+                
+                <div class="concept-list" id="concept-list-content">
+                    🛡️ <b>Commitment</b>: 堅固護盾<br>
+                    ⚡ <b>Courage</b>: 雙倍得分<br>
+                    💥 <b>Cultivation</b>: 能量衝擊<br>
+                    ✨ <b>Compassion</b>: 回覆生命<br>
+                    🌐 <b>Connection</b>: 減緩音符速<br>
+                    💬 <b>Communication</b>: 狂熱連擊<br>
+                    🎯 <b>Consideration</b>: 擴大判定區
+                </div>
+
+                <div class="difficulty-group">
+                    <button class="btn-diff easy" id="btn-easy" onclick="startGame('easy')">🟢 簡單模式 (3軌 · 輕鬆體驗)</button>
+                    <button class="btn-diff" id="btn-normal" onclick="startGame('normal')">🔵 標準速度 (4軌 · 節奏適中)</button>
+                    <button class="btn-diff hard" id="btn-hard" onclick="startGame('hard')">🔴 快速下落 (4軌 · 節奏極快)</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 遊戲結束畫面 -->
+        <div id="gameover-screen" class="screen hidden">
+            <div class="panel">
+                <h1 id="gameover-title">💥 樂章中斷 💥</h1>
+                <p id="gameover-desc">最終得分：</p>
+                <div id="final-score" style="font-size: 1.6rem; font-weight: bold; color: #38bdf8; margin-bottom: 2px;">0</div>
+                
+                <div id="gameover-highscore" style="background: rgba(250, 204, 21, 0.15); border: 1px solid rgba(250, 204, 21, 0.4); color: #facc15; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; margin-bottom: 8px; display: inline-block;">🏆 最高分：0</div>
+                
+                <div class="stats-box">
+                    <div class="stats-title" id="stats-title">🌟 收集到的 7Cs 精神：</div>
+                    <div id="concept-stats-content">無</div>
+                </div>
+
+                <div class="btn-group">
+                    <button class="btn" id="btn-restart" onclick="restartGame()">再次演奏</button>
+                    <button class="btn btn-secondary" id="btn-home" onclick="goHome()">返回主頁</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const i18n = {
+            'zh-HK': {
+                labelScore: '得分',
+                labelCombo: '連擊',
+                labelStatus: '血量 / 護盾',
+                controlsHint: '⌨️ 點擊軌道或在音符落到發光判定區時按下 D, F, J, K 鍵',
+                startTitle: '🎹 Utopia 7Cs 鋼琴大師 🎹',
+                startDesc: '跟隨音符節奏點擊琴鍵，收集 7Cs 精神特殊音符：',
+                cardEasy: '🟢 簡單模式',
+                cardNormal: '🔵 標準速度',
+                cardHard: '🔴 快速下落',
+                btnEasy: '🟢 簡單模式 (3軌 · 輕鬆體驗)',
+                btnNormal: '🔵 標準速度 (4軌 · 節奏適中)',
+                btnHard: '🔴 快速下落 (4軌 · 節奏極快)',
+                btnRestart: '再次演奏',
+                btnHome: '返回主頁',
+                gameoverTitle: '💥 樂章中斷 💥',
+                gameoverDesc: '最終得分：',
+                statsTitle: '🌟 收集到的 7Cs 精神：',
+                noStats: '繼續加油！在演奏中多收集 7Cs 精神音符！',
+                shieldAbsorbed: '🛡️ 護盾已成功抵擋一次漏拍失誤！',
+                modes: {
+                    easy: '簡單模式',
+                    normal: '標準速度',
+                    hard: '快速下落'
+                },
+                highScoreFormat: (mode, score) => `🏆 ${mode}最高分：${score}`,
+                newHighScoreFormat: (mode, score) => `🔥 創下${mode}新高分：${score}`,
+                concepts: {
+                    Commitment: '🛡️ Commitment: 獲得堅固護盾！',
+                    Courage: '⚡ Courage: 啟動雙倍得分！',
+                    Cultivation: '💥 Cultivation: 觸發全屏清障！',
+                    Compassion: '✨ Compassion: 生命值恢復！',
+                    Connection: '🌐 Connection: 減緩音符下落速度！',
+                    Communication: '💬 Communication: 進入狂熱連擊狀態！',
+                    Consideration: '🎯 Consideration: 擴大判定區域！'
+                },
+                conceptListHtml: `
+                    🛡️ <b>Commitment</b>: 堅固護盾<br>
+                    ⚡ <b>Courage</b>: 雙倍得分<br>
+                    💥 <b>Cultivation</b>: 全屏清障<br>
+                    ✨ <b>Compassion</b>: 恢復生命<br>
+                    🌐 <b>Connection</b>: 減緩音符速度<br>
+                    💬 <b>Communication</b>: 狂熱連擊模式<br>
+                    🎯 <b>Consideration</b>: 擴大判定區域
+                `
+            },
+            'zh-CN': {
+                labelScore: '得分',
+                labelCombo: '连击',
+                labelStatus: '血量 / 护盾',
+                controlsHint: '⌨️ 点击轨道或在音符落到发光判定区时按下 D, F, J, K 键',
+                startTitle: '🎹 Utopia 7Cs 钢琴大师 🎹',
+                startDesc: '跟随音符节奏点击琴键，收集 7Cs 精神特殊音符：',
+                cardEasy: '🟢 简单模式',
+                cardNormal: '🔵 标准速度',
+                cardHard: '🔴 快速下落',
+                btnEasy: '🟢 简单模式 (3轨 · 轻松体验)',
+                btnNormal: '🔵 标准速度 (4轨 · 节奏适中)',
+                btnHard: '🔴 快速下落 (4轨 · 节奏极快)',
+                btnRestart: '再次演奏',
+                btnHome: '返回主页',
+                gameoverTitle: '💥 乐章中断 💥',
+                gameoverDesc: '最终得分：',
+                statsTitle: '🌟 收集到的 7Cs 精神：',
+                noStats: '继续加油！在演奏中多收集 7Cs 精神音符！',
+                shieldAbsorbed: '🛡️ 护盾已成功抵挡一次漏拍失误！',
+                modes: {
+                    easy: '简单模式',
+                    normal: '标准速度',
+                    hard: '快速下落'
+                },
+                highScoreFormat: (mode, score) => `🏆 ${mode}最高分：${score}`,
+                newHighScoreFormat: (mode, score) => `🔥 创下${mode}新高分：${score}`,
+                concepts: {
+                    Commitment: '🛡️ Commitment: 获得坚固护盾！',
+                    Courage: '⚡ Courage: 启动双倍得分！',
+                    Cultivation: '💥 Cultivation: 触发全屏清障！',
+                    Compassion: '✨ Compassion: 生命值恢复！',
+                    Connection: '🌐 Connection: 减缓音符下落速度！',
+                    Communication: '💬 Communication: 进入狂热连击状态！',
+                    Consideration: '🎯 Consideration: 扩大判定区域！'
+                },
+                conceptListHtml: `
+                    🛡️ <b>Commitment</b>: 坚固护盾<br>
+                    ⚡ <b>Courage</b>: 双倍得分<br>
+                    💥 <b>Cultivation</b>: 全屏清障<br>
+                    ✨ <b>Compassion</b>: 恢复生命<br>
+                    🌐 <b>Connection</b>: 减缓音符速度<br>
+                    💬 <b>Communication</b>: 狂热连击模式<br>
+                    🎯 <b>Consideration</b>: 扩大判定区域
+                `
+            },
+            'en': {
+                labelScore: 'SCORE',
+                labelCombo: 'COMBO',
+                labelStatus: 'HP / SHIELD',
+                controlsHint: '⌨️ Tap lanes or press D, F, J, K when tiles reach the glow zone',
+                startTitle: '🎹 Utopia 7Cs Piano Master 🎹',
+                startDesc: 'Tap rhythm tiles on beat and collect 7Cs power-up notes:',
+                cardEasy: '🟢 Easy Mode',
+                cardNormal: '🔵 Standard',
+                cardHard: '🔴 Fast Drop',
+                btnEasy: '🟢 Easy Mode (3 Lanes · Relaxed)',
+                btnNormal: '🔵 Standard Speed (4 Lanes · Balanced)',
+                btnHard: '🔴 Fast Drop (4 Lanes · Rapid)',
+                btnRestart: 'Play Again',
+                btnHome: 'Main Menu',
+                gameoverTitle: '💥 Voyage Interrupted 💥',
+                gameoverDesc: 'Final Score:',
+                statsTitle: '🌟 7Cs Spirit Collected:',
+                noStats: 'Keep going! Collect 7Cs Spirit badges on your journey!',
+                shieldAbsorbed: '🛡️ Energy Shield blocked a missed beat!',
+                modes: {
+                    easy: 'Easy',
+                    normal: 'Standard',
+                    hard: 'Fast Drop'
+                },
+                highScoreFormat: (mode, score) => `🏆 ${mode} High Score: ${score}`,
+                newHighScoreFormat: (mode, score) => `🔥 NEW ${mode} HIGH SCORE: ${score}`,
+                concepts: {
+                    Commitment: '🛡️ Commitment: Shield Activated!',
+                    Courage: '⚡ Courage: Double Score!',
+                    Cultivation: '💥 Cultivation: Clear Screen!',
+                    Compassion: '✨ Compassion: Health Restored!',
+                    Connection: '🌐 Connection: Slow Motion!',
+                    Communication: '💬 Communication: Fever Combo Mode!',
+                    Consideration: '🎯 Consideration: Extended Hit Zone!'
+                },
+                conceptListHtml: `
+                    🛡️ <b>Commitment</b>: Energy Shield<br>
+                    ⚡ <b>Courage</b>: Double Score<br>
+                    💥 <b>Cultivation</b>: Clear Screen<br>
+                    ✨ <b>Compassion</b>: Restore HP<br>
+                    🌐 <b>Connection</b>: Slow Down Tiles<br>
+                    💬 <b>Communication</b>: Fever Combo<br>
+                    🎯 <b>Consideration</b>: Wider Hit Zone
+                `
+            }
+        };
+
+        let currentLang = 'zh-HK';
+        let currentDifficulty = 'normal';
+
+        function getHighScore(diff) {
+            return parseInt(localStorage.getItem(`utopia_piano_high_score_${diff}`)) || 0;
+        }
+
+        function updateHighScoreDisplay() {
+            const langData = i18n[currentLang];
+            
+            document.getElementById('card-easy-title').innerText = langData.cardEasy;
+            document.getElementById('card-normal-title').innerText = langData.cardNormal;
+            document.getElementById('card-hard-title').innerText = langData.cardHard;
+
+            document.getElementById('score-easy-val').innerText = getHighScore('easy');
+            document.getElementById('score-normal-val').innerText = getHighScore('normal');
+            document.getElementById('score-hard-val').innerText = getHighScore('hard');
+
+            const endModeName = langData.modes[currentDifficulty];
+            const endScore = getHighScore(currentDifficulty);
+            document.getElementById('gameover-highscore').innerText = langData.highScoreFormat(endModeName, endScore);
+        }
+
+        function setLanguage(lang) {
+            currentLang = lang;
+            const data = i18n[lang];
+
+            document.getElementById('label-score').innerText = data.labelScore;
+            document.getElementById('label-combo').innerText = data.labelCombo;
+            document.getElementById('label-status').innerText = data.labelStatus;
+            document.getElementById('controls-hint').innerText = data.controlsHint;
+            document.getElementById('start-title').innerText = data.startTitle;
+            document.getElementById('start-desc').innerText = data.startDesc;
+            document.getElementById('btn-easy').innerText = data.btnEasy;
+            document.getElementById('btn-normal').innerText = data.btnNormal;
+            document.getElementById('btn-hard').innerText = data.btnHard;
+            document.getElementById('gameover-title').innerText = data.gameoverTitle;
+            document.getElementById('gameover-desc').innerText = data.gameoverDesc;
+            document.getElementById('stats-title').innerText = data.statsTitle;
+            document.getElementById('btn-restart').innerText = data.btnRestart;
+            document.getElementById('btn-home').innerText = data.btnHome;
+            document.getElementById('concept-list-content').innerHTML = data.conceptListHtml;
+
+            updateHighScoreDisplay();
+
+            document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
+            if (event && event.target) {
+                event.target.classList.add('active');
+            }
+        }
+
+        // Web Audio Synthesizer
+        let audioCtx = null;
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playNoteSound(col, totalCols) {
+            if (!audioCtx) return;
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+
+            const frequencies = [261.63, 293.66, 329.63, 392.00, 440.00, 523.25]; // C, D, E, G, A, C5
+            const freq = frequencies[col % frequencies.length];
+
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(freq, now);
+
+            gain.gain.setValueAtTime(0.3, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            osc.start(now);
+            osc.stop(now + 0.4);
+        }
+
+        function playMissSound() {
+            if (!audioCtx) return;
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(130, now);
+            osc.frequency.exponentialRampToValueAtTime(60, now + 0.2);
+
+            gain.gain.setValueAtTime(0.2, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            osc.start(now);
+            osc.stop(now + 0.2);
+        }
+
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreEl = document.getElementById('score');
+        const comboEl = document.getElementById('combo');
+        const finalScoreEl = document.getElementById('final-score');
+        const startScreen = document.getElementById('start-screen');
+        const gameoverScreen = document.getElementById('gameover-screen');
+        const activeConceptEl = document.getElementById('active-concept');
+        const conceptStatsContent = document.getElementById('concept-stats-content');
+
+        let logicalWidth = 480;
+        let logicalHeight = 850;
+        let dpr = window.devicePixelRatio || 1;
+
+        function resizeCanvas() {
+            logicalWidth = canvas.parentElement.clientWidth;
+            logicalHeight = canvas.parentElement.clientHeight;
+
+            dpr = window.devicePixelRatio || 1;
+            canvas.width = logicalWidth * dpr;
+            canvas.height = logicalHeight * dpr;
+
+            ctx.resetTransform();
+            ctx.scale(dpr, dpr);
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        let gameActive = false;
+        let score = 0;
+        let combo = 0;
+        let maxCombo = 0;
+        let lives = 3;
+        let tiles = [];
+        let floaters = [];
+        let particles = [];
+        let laneRipple = [];
+
+        let numLanes = 4;
+        let keyBinds = ['d', 'f', 'j', 'k'];
+
+        let lastSpawnTime = 0;
+        let spawnInterval = 600;
+
+        let collectedStats = {
+            Commitment: 0,
+            Courage: 0,
+            Cultivation: 0,
+            Compassion: 0,
+            Connection: 0,
+            Communication: 0,
+            Consideration: 0
+        };
+
+        const playerBuffs = {
+            hasShield: false,
+            doubleScore: false,
+            slowMotion: false,
+            feverCombo: false,
+            widerHitZone: false,
+            powerupTimer: 0
+        };
+
+        function resetBuffs() {
+            playerBuffs.hasShield = false;
+            playerBuffs.doubleScore = false;
+            playerBuffs.slowMotion = false;
+            playerBuffs.feverCombo = false;
+            playerBuffs.widerHitZone = false;
+            playerBuffs.powerupTimer = 0;
+            activeConceptEl.style.display = 'none';
+        }
+
+        function updateLivesDisplay() {
+            for (let i = 1; i <= 3; i++) {
+                const heartSlot = document.getElementById(`heart-${i}`);
+                if (i <= lives) {
+                    heartSlot.classList.remove('slot-off');
+                } else {
+                    heartSlot.classList.add('slot-off');
+                }
+            }
+
+            const shieldSlot = document.getElementById('shield-slot');
+            if (playerBuffs.hasShield) {
+                shieldSlot.classList.remove('slot-off');
+            } else {
+                shieldSlot.classList.add('slot-off');
+            }
+        }
+
+        function showActiveConceptText(text) {
+            activeConceptEl.innerText = text;
+            activeConceptEl.style.display = 'block';
+        }
+
+        function createParticles(x, y, color) {
+            for (let i = 0; i < 12; i++) {
+                particles.push({
+                    x: x, y: y,
+                    vx: (Math.random() - 0.5) * 8,
+                    vy: (Math.random() - 0.5) * 8 - 2,
+                    radius: Math.random() * 4 + 2,
+                    alpha: 1,
+                    color: color || '#38bdf8'
+                });
+            }
+        }
+
+        function createFloatingText(text, x, y, color) {
+            floaters.push({
+                text: text,
+                x: x,
+                y: y,
+                alpha: 1,
+                color: color || '#facc15'
+            });
+        }
+
+        function triggerLaneRipple(col) {
+            laneRipple[col] = 1.0;
+        }
+
+        const conceptMeta = [
+            { name: 'Commitment', icon: '🛡️', color: '#1e3a8a' },
+            { name: 'Courage', icon: '⚡', color: '#b45309' },
+            { name: 'Cultivation', icon: '💥', color: '#831843' },
+            { name: 'Compassion', icon: '✨', color: '#065f46' },
+            { name: 'Connection', icon: '🌐', color: '#312e81' },
+            { name: 'Communication', icon: '💬', color: '#701a75' },
+            { name: 'Consideration', icon: '🎯', color: '#14532d' }
+        ];
+
+        function spawnTile() {
+            const col = Math.floor(Math.random() * numLanes);
+            
+            let baseSpeed = 4.5;
+            if (currentDifficulty === 'easy') baseSpeed = 3.5;
+            if (currentDifficulty === 'hard') baseSpeed = 6.2;
+
+            if (playerBuffs.slowMotion) {
+                baseSpeed *= 0.65;
+            }
+
+            let isPowerup = Math.random() < 0.15;
+            let chosenConcept = null;
+
+            if (isPowerup) {
+                chosenConcept = conceptMeta[Math.floor(Math.random() * conceptMeta.length)];
+            }
+
+            const tileHeight = 85;
+            tiles.push({
+                col: col,
+                y: -tileHeight,
+                height: tileHeight,
+                speed: baseSpeed,
+                isPowerup: isPowerup,
+                concept: chosenConcept
+            });
+        }
+
+        function handleHit(col) {
+            initAudio();
+            triggerLaneRipple(col);
+
+            const hitLineY = logicalHeight - 120;
+            const hitZoneHeight = playerBuffs.widerHitZone ? 110 : 80;
+            const hitZoneTop = hitLineY - hitZoneHeight / 2;
+            const hitZoneBottom = hitLineY + hitZoneHeight / 2;
+
+            let targetIndex = -1;
+            let closestDist = Infinity;
+
+            for (let i = 0; i < tiles.length; i++) {
+                const t = tiles[i];
+                if (t.col === col) {
+                    const tileCenterY = t.y + t.height / 2;
+                    const dist = Math.abs(tileCenterY - hitLineY);
+                    if (tileCenterY >= hitZoneTop - 20 && tileCenterY <= hitZoneBottom + 20 && dist < closestDist) {
+                        closestDist = dist;
+                        targetIndex = i;
+                    }
+                }
+            }
+
+            const laneWidth = logicalWidth / numLanes;
+            const clickX = col * laneWidth + laneWidth / 2;
+
+            if (targetIndex !== -1) {
+                const t = tiles[targetIndex];
+                
+                let points = 10;
+                let rating = 'GOOD';
+                let ratingColor = '#38bdf8';
+
+                if (closestDist < 20) {
+                    rating = 'PERFECT!';
+                    ratingColor = '#facc15';
+                    points = 30;
+                } else if (closestDist < 40) {
+                    rating = 'GREAT!';
+                    ratingColor = '#4ade80';
+                    points = 20;
+                }
+
+                if (playerBuffs.doubleScore) points *= 2;
+                combo++;
+                if (combo > maxCombo) maxCombo = combo;
+                score += points + Math.floor(combo / 5) * 2;
+
+                if (t.isPowerup && t.concept) {
+                    const cName = t.concept.name;
+                    if (collectedStats[cName] !== undefined) {
+                        collectedStats[cName]++;
+                    }
+
+                    const langData = i18n[currentLang];
+
+                    if (cName === 'Commitment') {
+                        playerBuffs.hasShield = true;
+                        showActiveConceptText(langData.concepts.Commitment);
+                    } else if (cName === 'Courage') {
+                        playerBuffs.doubleScore = true;
+                        playerBuffs.powerupTimer = 350;
+                        showActiveConceptText(langData.concepts.Courage);
+                    } else if (cName === 'Cultivation') {
+                        tiles = [];
+                        showActiveConceptText(langData.concepts.Cultivation);
+                    } else if (cName === 'Compassion') {
+                        if (lives < 3) lives++;
+                        showActiveConceptText(langData.concepts.Compassion);
+                    } else if (cName === 'Connection') {
+                        playerBuffs.slowMotion = true;
+                        playerBuffs.powerupTimer = 300;
+                        showActiveConceptText(langData.concepts.Connection);
+                    } else if (cName === 'Communication') {
+                        playerBuffs.feverCombo = true;
+                        playerBuffs.powerupTimer = 300;
+                        combo += 10;
+                        showActiveConceptText(langData.concepts.Communication);
+                    } else if (cName === 'Consideration') {
+                        playerBuffs.widerHitZone = true;
+                        playerBuffs.powerupTimer = 300;
+                        showActiveConceptText(langData.concepts.Consideration);
+                    }
+
+                    updateLivesDisplay();
+                }
+
+                playNoteSound(col, numLanes);
+                createParticles(clickX, hitLineY, ratingColor);
+                createFloatingText(rating, clickX, hitLineY - 30, ratingColor);
+
+                tiles.splice(targetIndex, 1);
+
+                scoreEl.innerText = score;
+                comboEl.innerText = combo;
+            } else {
+                combo = 0;
+                comboEl.innerText = combo;
+                playMissSound();
+                createFloatingText('MISS', clickX, hitLineY, '#ef4444');
+            }
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if (!gameActive) return;
+            const key = e.key.toLowerCase();
+            const idx = keyBinds.indexOf(key);
+            if (idx !== -1 && idx < numLanes) {
+                handleHit(idx);
+            }
+        });
+
+        canvas.addEventListener('touchstart', (e) => {
+            if (!gameActive) return;
+            e.preventDefault();
+            const rect = canvas.getBoundingClientRect();
+            for (let i = 0; i < e.changedTouches.length; i++) {
+                const touch = e.changedTouches[i];
+                const touchX = touch.clientX - rect.left;
+                const laneWidth = logicalWidth / numLanes;
+                const col = Math.floor(touchX / laneWidth);
+                if (col >= 0 && col < numLanes) {
+                    handleHit(col);
+                }
+            }
+        }, { passive: false });
+
+        canvas.addEventListener('mousedown', (e) => {
+            if (!gameActive) return;
+            const rect = canvas.getBoundingClientRect();
+            const touchX = e.clientX - rect.left;
+            const laneWidth = logicalWidth / numLanes;
+            const col = Math.floor(touchX / laneWidth);
+            if (col >= 0 && col < numLanes) {
+                handleHit(col);
+            }
+        });
+
+        function startGame(difficulty) {
+            initAudio();
+            currentDifficulty = difficulty || 'normal';
+
+            if (currentDifficulty === 'easy') {
+                numLanes = 3;
+                keyBinds = ['d', 'f', 'j'];
+                spawnInterval = 750;
+            } else if (currentDifficulty === 'normal') {
+                numLanes = 4;
+                keyBinds = ['d', 'f', 'j', 'k'];
+                spawnInterval = 550;
+            } else {
+                numLanes = 4;
+                keyBinds = ['d', 'f', 'j', 'k'];
+                spawnInterval = 380;
+            }
+
+            laneRipple = new Array(numLanes).fill(0);
+            score = 0;
+            combo = 0;
+            maxCombo = 0;
+            lives = 3;
+            tiles = [];
+            floaters = [];
+            particles = [];
+            
+            for (let k in collectedStats) {
+                collectedStats[k] = 0;
+            }
+
+            resetBuffs();
+            scoreEl.innerText = score;
+            comboEl.innerText = combo;
+            updateLivesDisplay();
+
+            startScreen.classList.add('hidden');
+            gameoverScreen.classList.add('hidden');
+            gameActive = true;
+
+            lastSpawnTime = performance.now();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function restartGame() {
+            startGame(currentDifficulty);
+        }
+
+        function goHome() {
+            gameActive = false;
+            updateHighScoreDisplay();
+            gameoverScreen.classList.add('hidden');
+            startScreen.classList.remove('hidden');
+        }
+
+        function gameLoop(timestamp) {
+            if (!gameActive) return;
+
+            ctx.clearRect(0, 0, logicalWidth, logicalHeight);
+
+            if (playerBuffs.powerupTimer > 0) {
+                playerBuffs.powerupTimer--;
+                if (playerBuffs.powerupTimer <= 0) {
+                    resetBuffs();
+                }
+            }
+
+            const laneWidth = logicalWidth / numLanes;
+            const hitLineY = logicalHeight - 120;
+            const hitZoneHeight = playerBuffs.widerHitZone ? 110 : 80;
+            const hitZoneTop = hitLineY - hitZoneHeight / 2;
+
+            // 繪製軌道背景與按鍵提示
+            for (let i = 0; i < numLanes; i++) {
+                const lx = i * laneWidth;
+                
+                ctx.fillStyle = (i % 2 === 0) ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.1)';
+                ctx.fillRect(lx, 0, laneWidth, logicalHeight);
+
+                if (laneRipple[i] > 0) {
+                    ctx.fillStyle = `rgba(56, 189, 248, ${laneRipple[i] * 0.35})`;
+                    ctx.fillRect(lx, 0, laneWidth, logicalHeight);
+                    laneRipple[i] -= 0.06;
+                }
+
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(lx, 0);
+                ctx.lineTo(lx, logicalHeight);
+                ctx.stroke();
+
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+                ctx.font = 'bold 15px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(keyBinds[i] ? keyBinds[i].toUpperCase() : '', lx + laneWidth / 2, logicalHeight - 25);
+            }
+
+            // 【明顯發光判定區 (Hit Zone Box)】
+            ctx.save();
+            ctx.fillStyle = playerBuffs.widerHitZone ? 'rgba(250, 204, 21, 0.12)' : 'rgba(56, 189, 248, 0.12)';
+            ctx.fillRect(0, hitZoneTop, logicalWidth, hitZoneHeight);
+
+            ctx.shadowColor = playerBuffs.widerHitZone ? '#facc15' : '#38bdf8';
+            ctx.shadowBlur = 15;
+            ctx.strokeStyle = playerBuffs.widerHitZone ? '#facc15' : '#38bdf8';
+            ctx.lineWidth = 3;
+            
+            // 繪製判定區上下框線
+            ctx.beginPath();
+            ctx.moveTo(0, hitZoneTop);
+            ctx.lineTo(logicalWidth, hitZoneTop);
+            ctx.moveTo(0, hitZoneTop + hitZoneHeight);
+            ctx.lineTo(logicalWidth, hitZoneTop + hitZoneHeight);
+            ctx.stroke();
+            ctx.restore();
+
+            if (timestamp - lastSpawnTime > spawnInterval) {
+                spawnTile();
+                lastSpawnTime = timestamp;
+            }
+
+            // 更新與繪製音符
+            for (let i = tiles.length - 1; i >= 0; i--) {
+                const t = tiles[i];
+                t.y += t.speed;
+
+                const tx = t.col * laneWidth + 6;
+                const tw = laneWidth - 12;
+
+                ctx.save();
+                ctx.beginPath();
+                ctx.roundRect(tx, t.y, tw, t.height, 10);
+
+                if (t.isPowerup && t.concept) {
+                    ctx.fillStyle = t.concept.color || '#3b82f6';
+                    ctx.shadowColor = '#facc15';
+                    ctx.shadowBlur = 12;
+                    ctx.fill();
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.lineWidth = 2.5;
+                    ctx.stroke();
+
+                    ctx.fillStyle = '#ffffff';
+                    ctx.font = 'bold 20px sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(t.concept.icon, tx + tw / 2, t.y + t.height / 2 + 7);
+                } else {
+                    // 標準音符：加上高對比邊框與漸層，避免重疊時混淆
+                    ctx.fillStyle = '#1e40af';
+                    ctx.shadowColor = '#38bdf8';
+                    ctx.shadowBlur = 8;
+                    ctx.fill();
+                    ctx.strokeStyle = '#38bdf8';
+                    ctx.lineWidth = 2.5;
+                    ctx.stroke();
+
+                    // 內部琴鍵裝飾條
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
+                    ctx.fillRect(tx + 4, t.y + 6, tw - 8, 6);
+                }
+                ctx.restore();
+
+                // 漏拍判定
+                if (t.y > hitZoneTop + hitZoneHeight + 20) {
+                    tiles.splice(i, 1);
+                    combo = 0;
+                    comboEl.innerText = combo;
+
+                    if (playerBuffs.hasShield) {
+                        playerBuffs.hasShield = false;
+                        showActiveConceptText(i18n[currentLang].shieldAbsorbed);
+                        updateLivesDisplay();
+                    } else {
+                        lives--;
+                        updateLivesDisplay();
+                        playMissSound();
+                        createFloatingText('MISS', t.col * laneWidth + laneWidth / 2, hitLineY, '#ef4444');
+
+                        if (lives <= 0) {
+                            endGame();
+                            return;
+                        }
+                    }
+                }
+            }
+
+            // 粒子特效
+            for (let i = particles.length - 1; i >= 0; i--) {
+                let p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.alpha -= 0.03;
+
+                ctx.save();
+                ctx.globalAlpha = Math.max(p.alpha, 0);
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                ctx.fillStyle = p.color;
+                ctx.fill();
+                ctx.restore();
+
+                if (p.alpha <= 0) particles.splice(i, 1);
+            }
+
+            // 浮動文字 (PERFECT / GOOD / MISS)
+            for (let i = floaters.length - 1; i >= 0; i--) {
+                let f = floaters[i];
+                f.y -= 1.2;
+                f.alpha -= 0.025;
+
+                ctx.save();
+                ctx.globalAlpha = Math.max(f.alpha, 0);
+                ctx.font = 'bold 18px sans-serif';
+                ctx.fillStyle = f.color;
+                ctx.textAlign = 'center';
+                ctx.shadowColor = '#000000';
+                ctx.shadowBlur = 4;
+                ctx.fillText(f.text, f.x, f.y);
+                ctx.restore();
+
+                if (f.alpha <= 0) floaters.splice(i, 1);
+            }
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        function endGame() {
+            gameActive = false;
+            finalScoreEl.innerText = score;
+
+            const langData = i18n[currentLang];
+            const modeName = langData.modes[currentDifficulty];
+            const highcoreBadge = document.getElementById('gameover-highscore');
+            const key = `utopia_piano_high_score_${currentDifficulty}`;
+            let currentHighScore = parseInt(localStorage.getItem(key)) || 0;
+
+            if (score > currentHighScore) {
+                currentHighScore = score;
+                localStorage.setItem(key, currentHighScore);
+                highcoreBadge.innerHTML = langData.newHighScoreFormat(modeName, currentHighScore);
+                highcoreBadge.style.color = '#4ade80';
+            } else {
+                highcoreBadge.innerHTML = langData.highScoreFormat(modeName, currentHighScore);
+                highcoreBadge.style.color = '#facc15';
+            }
+
+            let statsHTML = '';
+            let totalCollected = 0;
+
+            for (let key in collectedStats) {
+                let count = collectedStats[key];
+                if (count > 0) {
+                    totalCollected += count;
+                    let meta = conceptMeta.find(c => c.name === key) || { icon: '✨', color: '#38bdf8' };
+                    statsHTML += `<div class="stats-item">
+                        <span>${meta.icon} <b style="color:${meta.color}">${key}</b></span>
+                        <span>x ${count}</span>
+                    </div>`;
+                }
+            }
+
+            if (totalCollected === 0) {
+                statsHTML = `<div style="text-align:center; color:#94a3b8; font-size:0.75rem;">${langData.noStats}</div>`;
+            }
+
+            conceptStatsContent.innerHTML = statsHTML;
+            gameoverScreen.classList.remove('hidden');
+        }
+
+        updateHighScoreDisplay();
+    </script>
+</body>
+</html>
